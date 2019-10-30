@@ -1,0 +1,18 @@
+# configure the terminal program
+PORT_LINUX  ?= /dev/ttyUSB0
+PORT_DARWIN ?= $(firstword $(sort $(wildcard /dev/tty.usbmodem*)))
+BAUD        ?= 38400
+include $(RIOTMAKE)/tools/serial.inc.mk
+
+PROGRAMMER ?= stk500v2
+# Serial Baud rate for flasher is configured to 57.6kBaud
+FFLAGS_EXTRA += -b 57600
+# avoid error if mcu signature doesn't match
+FFLAGS_EXTRA += -D
+
+# From current fuse configuration
+BOOTLOADER_SIZE ?= 4K
+ROM_RESERVED ?= $(BOOTLOADER_SIZE)
+
+include $(RIOTMAKE)/tools/avrdude.inc.mk
+include $(RIOTBOARD)/common/atmega/Makefile.include
