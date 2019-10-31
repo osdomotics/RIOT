@@ -8,7 +8,7 @@ PROGRAMMER ?= stk500v2
 # Serial Baud rate for flasher is configured to 57.6kBaud
 FFLAGS_EXTRA += -b 57600
 # avoid error if mcu signature doesn't match
-FFLAGS_EXTRA += -D
+FFLAGS_EXTRA += -D -V
 
 # From current fuse configuration
 BOOTLOADER_SIZE ?= 4K

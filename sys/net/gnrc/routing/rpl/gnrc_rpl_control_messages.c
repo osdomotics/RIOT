@@ -43,7 +43,7 @@
 #include "net/gnrc/rpl/p2p.h"
 #endif
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 static char addr_str[IPV6_ADDR_MAX_STR_LEN];
@@ -562,20 +562,27 @@ bool _parse_options(int msg_type, gnrc_rpl_instance_t *inst, gnrc_rpl_opt_t *opt
                 gnrc_rpl_opt_prefix_info_t *pi = (gnrc_rpl_opt_prefix_info_t *) opt;
                 /* check for the auto address-configuration flag */
                 gnrc_netif_t *netif = gnrc_netif_get_by_pid(dodag->iface);
-
+                DEBUG ("1");
                 assert(netif != NULL);
+                DEBUG ("2");
                 if ((gnrc_netif_ipv6_get_iid(netif, &iid) < 0)
                     && !(pi->LAR_flags & GNRC_RPL_PREFIX_AUTO_ADDRESS_BIT)) {
+                      DEBUG ("franz %d, %x, %x", gnrc_netif_ipv6_get_iid(netif, &iid), pi->LAR_flags, GNRC_RPL_PREFIX_AUTO_ADDRESS_BIT);
                     break;
                 }
+                DEBUG ("3");
                 ipv6_addr_set_aiid(&pi->prefix, iid.uint8);
                 /* TODO: find a way to do this with DAD (i.e. state != VALID) */
-                gnrc_netif_ipv6_addr_add_internal(netif, &pi->prefix, pi->prefix_len,
+                DEBUG ("4");
+                int res = gnrc_netif_ipv6_addr_add_internal(netif, &pi->prefix, pi->prefix_len,
                                                   GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_VALID);
+                DEBUG (" returns: %d\n", res);
                 /* set lifetimes */
-                gnrc_ipv6_nib_pl_set(netif->pid, &pi->prefix, pi->prefix_len,
-                                     _sec_to_ms(byteorder_ntohl(pi->valid_lifetime)),
-                                     _sec_to_ms(byteorder_ntohl(pi->pref_lifetime)));
+                DEBUG ("5");
+                res = gnrc_ipv6_nib_pl_set(netif->pid, &pi->prefix, pi->prefix_len,10000,10000);
+//                                     _sec_to_ms(byteorder_ntohl(pi->valid_lifetime)),
+//                                     _sec_to_ms(byteorder_ntohl(pi->pref_lifetime)));
+                DEBUG (" returns: %d\n", res);
 
                 break;
             case (GNRC_RPL_OPT_SOLICITED_INFO):
@@ -1026,11 +1033,16 @@ void gnrc_rpl_send_DAO(gnrc_rpl_instance_t *inst, ipv6_addr_t *destination, uint
     }
 
     /* add own address */
-    DEBUG("RPL: Send DAO - building target %s/128\n",
-          ipv6_addr_to_str(addr_str, me, sizeof(addr_str)));
-    if ((pkt = _dao_target_build(pkt, me, IPV6_ADDR_BIT_LEN)) == NULL) {
-        DEBUG("RPL: Send DAO - no space left in packet buffer\n");
-        return;
+    // mpr: send own address only if it is global !
+    if (ipv6_addr_is_global(me)) {
+        DEBUG("RPL: Send DAO - building target %s/128\n",
+              ipv6_addr_to_str(addr_str, me, sizeof(addr_str)));
+        if ((pkt = _dao_target_build(pkt, me, IPV6_ADDR_BIT_LEN)) == NULL) {
+            DEBUG("RPL: Send DAO - no space left in packet buffer\n");
+            return;
+        }
+    } else {
+        DEBUG ("me is not global !\n");
     }
 
     bool local_instance = (inst->id & GNRC_RPL_INSTANCE_ID_MSB) ? true : false;
