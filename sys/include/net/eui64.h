@@ -26,10 +26,18 @@
 
 #include <stdint.h>
 #include "byteorder.h"
+#include "luid.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief IEEE 802.15.4 address lengths
+ * @{
+ */
+#define IEEE802154_SHORT_ADDRESS_LEN (2U) /**< short (16-bit) address */
+#define IEEE802154_LONG_ADDRESS_LEN  (8U) /**< long address (EUI-64) */
 
 /**
  * @brief Data type to represent an EUI-64.
@@ -39,6 +47,20 @@ typedef union {
     uint8_t uint8[8];            /**< split into 8 8-bit words. */
     network_uint16_t uint16[4];  /**< split into 4 16-bit words. */
 } eui64_t;
+
+inline void eui64_get (eui64_t *address)
+{
+#ifdef BOARD_PROVIDES_EUI64
+  extern void board_eui64_get (eui64_t *address);
+  board_eui64_get (address);
+#else
+  /* get an 8-byte unique ID to use as hardware address */
+  luid_get(address->uint8, IEEE802154_LONG_ADDRESS_LEN);
+  /* make sure we mark the address as non-multicast and not globally unique */
+  address->uint8[0] &= ~(0x01);
+  address->uint8[0] |=  (0x02);
+#endif
+}
 
 #ifdef __cplusplus
 }

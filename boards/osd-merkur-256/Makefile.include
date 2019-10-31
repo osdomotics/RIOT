@@ -14,5 +14,12 @@ FFLAGS_EXTRA += -D
 BOOTLOADER_SIZE ?= 4K
 ROM_RESERVED ?= $(BOOTLOADER_SIZE)
 
+# Bootloader Jumptable
+BOOTLOADER_GET_MAC=0x0003ff80
+LINKFLAGS  += -Wl,--defsym,bootloader_get_mac=$(BOOTLOADER_GET_MAC)
+
+# we have a private auto init function
+CFLAGS += -DBOARD_PROVIDES_EUI64
+
 include $(RIOTMAKE)/tools/avrdude.inc.mk
 include $(RIOTBOARD)/common/atmega/Makefile.include

@@ -22,10 +22,24 @@
 
 #include "board.h"
 #include "cpu.h"
+#include <stdint.h>
+#include "net/eui64.h"
+
+extern uint8_t bootloader_get_mac (uint8_t);
 
 void led_init(void)
 {
     /* initialize the board LED */
     LED_PORT_DDR |= LED0_MASK;
     LED0_ON;
+}
+
+void board_eui64_get (eui64_t *address)
+{
+  uint64_t buf = 0;
+  for (int x = 0; x < 8; x++) {
+    buf <<= 8;
+    buf |= bootloader_get_mac (7-x);
+  }
+  address->uint64.u64 = htonll (buf);
 }
